@@ -3,6 +3,7 @@ import smtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
 load_dotenv()
+
 def send_mail(receiver_mail:str,
              subject:str,
               body:str):

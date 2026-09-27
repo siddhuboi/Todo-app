@@ -30,12 +30,12 @@ class UserUpdateFull(BaseModel):
 
 class Taskcreate(BaseModel):
     title:str
-    assigned_to:int
+    assign_to_User:str
 
 class Taskresponse(BaseModel):
     id: int
     title: str
-    assigned_to: int
+    assigned_to: str
     status: str
 
 class TaskReview(BaseModel):

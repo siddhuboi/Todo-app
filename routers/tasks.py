@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-
+from celery_tasks import send_task_email
 from database import get_session
 from models import User, Task
 from security import get_current_user, require_admin
 from schemas import Taskcreate, Taskresponse, TaskReview
-from send_email import send_mail
-
 
 router = APIRouter(
     tags=["Tasks"]
@@ -21,10 +19,9 @@ def create_task(
     current_user: User = Depends(require_admin),
     session: Session = Depends(get_session)
 ):
-    user = session.get(
-        User,
-        task_data.assigned_to
-    )
+    user = session.exec(
+    select(User).where(
+        User.username == task_data.assign_to_User)).first()
 
     if not user:
         raise HTTPException(
@@ -41,7 +38,7 @@ def create_task(
     # Create task
     task = Task(
         title=task_data.title,
-        assigned_to=task_data.assigned_to,
+        assigned_to=user.id,
         assigned_by=current_user.id,
         status="pending"
     )
@@ -51,7 +48,7 @@ def create_task(
     session.refresh(task)
 
     # Email the student
-    send_mail(
+    send_task_email.delay(
         receiver_mail=user.email,
         subject="New Task Assigned",
         body=f"""
@@ -70,7 +67,13 @@ Todo App
 """
     )
 
-    return task
+    return Taskresponse(
+    id=task.id,
+    title=task.title,
+    assigned_to=user.username,
+    assigned_by=task.assigned_by,
+    status=task.status
+)
 
 
 @router.get("/tasks")
@@ -141,7 +144,7 @@ def submit_task(
 
     # Email the respective admin
     if admin:
-        send_mail(
+        send_task_email.delay(
             receiver_mail=admin.email,
             subject="Task Submitted",
             body=f"""
@@ -213,7 +216,7 @@ def review_task(
 
     # Email student
     if student:
-        send_mail(
+        send_task_email.delay(
             receiver_mail=student.email,
             subject="Task Review Update",
             body=f"""
