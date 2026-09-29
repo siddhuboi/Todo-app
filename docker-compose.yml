@@ -1,0 +1,41 @@
+services:
+
+   postgres:
+     image: postgres:17
+     container_name: todo-postgres
+     environment:
+       POSTGRES_USER: postgres
+       POSTGRES_PASSWORD: admin
+       POSTGRES_DB: TODO
+     ports:
+       - "5432:5432"
+     volumes:
+       - postgres_data:/var/lib/postgresql/data
+
+   fastapi:
+    build: .
+    container_name: todo-api-container
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+   redis:
+    image: redis:latest
+    container_name: todo-redis
+    ports:
+      - "6379:6379"
+   celery:
+     build: .
+     container_name: todo-celery
+     env_file:
+       - .env
+     command: uv run celery -A celery_app.celery worker --loglevel=info --pool=solo
+     depends_on:
+      - redis
+      - postgres
+volumes:
+   postgres_data:
+
