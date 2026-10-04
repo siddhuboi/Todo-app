@@ -164,7 +164,12 @@ Todo App
 """
         )
 
-    return task
+    return Taskresponse(
+    id=task.id,
+    title=task.title,
+    assigned_to=current_user.username,
+    status=task.status
+)
 
 
 # Admin reviews a submitted task
@@ -233,4 +238,9 @@ Todo App
 """
         )
 
-    return task
+    return Taskresponse(
+        id=task.id,
+        title=task.title,
+        assigned_to=student.username,
+        status=task.status
+    )
